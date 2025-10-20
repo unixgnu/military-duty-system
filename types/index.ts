@@ -38,7 +38,40 @@ export type DutyRole =
   | string; // Возможность добавить свою роль
 
 // Роли пользователей системы
-export type UserRole = 'Администратор' | 'Дежурный' | 'Командир роты';
+export type UserRole = 'Администратор' | 'Командир роты' | 'Пользователь';
+
+// Пользователь системы (расширенный)
+export interface User {
+  id: string;
+  email: string;
+  password: string; // Хешированный
+  username: string;
+  role: UserRole;
+  organizationId: string; // ID организации (для первого пользователя - создается автоматически)
+  createdAt: Date;
+  lastLogin?: Date;
+  isActive: boolean;
+}
+
+// Организация (для мультитенантности)
+export interface Organization {
+  id: string;
+  name: string;
+  ownerId: string; // ID первого зарегистрированного пользователя
+  createdAt: Date;
+}
+
+// Лог действий
+export interface ActionLog {
+  id: string;
+  userId: string;
+  userName: string;
+  action: string; // 'create', 'update', 'delete'
+  entityType: string; // 'soldier', 'duty', 'assignment'
+  entityId: string;
+  changes?: any; // Что изменилось
+  timestamp: Date;
+}
 
 // Солдат
 export interface Soldier {
@@ -132,14 +165,6 @@ export interface AppSettings {
   notificationsEnabled: boolean;
 }
 
-// Пользователь системы
-export interface User {
-  id: string;
-  username: string;
-  role: UserRole;
-  soldierId?: string; // Связь с солдатом, если это командир роты
-  createdAt: Date;
-}
 
 // Отчёт
 export interface Report {

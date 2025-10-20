@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Calendar, BarChart3, RefreshCw, FileText, Settings } from 'lucide-react';
+import { Users, Calendar, BarChart3, RefreshCw, FileText, Settings, LogOut } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import SoldiersPage from '@/components/pages/SoldiersPage';
 import DutiesPage from '@/components/pages/DutiesPage';
 import SchedulePage from '@/components/pages/SchedulePage';
@@ -12,10 +13,19 @@ import ReportsPage from '@/components/pages/ReportsPage';
 import SettingsPage from '@/components/pages/SettingsPage';
 import Loading from '@/components/Loading';
 import Logo from '@/components/Logo';
+import RegisterPage from '@/components/auth/RegisterPage';
+import LoginPage from '@/components/auth/LoginPage';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('soldiers');
   const [isLoading, setIsLoading] = useState(true);
+  const [authView, setAuthView] = useState<'login' | 'register'>('login');
+  
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const organization = useAuthStore((state) => state.organization);
+  const currentUser = useAuthStore((state) => state.currentUser);
+  const logout = useAuthStore((state) => state.logout);
 
   useEffect(() => {
     // Минимальное время показа загрузки для плавности
@@ -30,6 +40,35 @@ export default function Home() {
     return <Loading />;
   }
 
+  // Если нет организации - показываем регистрацию
+  if (!organization) {
+    return (
+      <RegisterPage
+        onSuccess={() => setIsLoading(true)}
+        onSwitchToLogin={() => setAuthView('login')}
+      />
+    );
+  }
+
+  // Если не авторизован - показываем вход
+  if (!isAuthenticated) {
+    if (authView === 'register') {
+      return (
+        <RegisterPage
+          onSuccess={() => setIsLoading(true)}
+          onSwitchToLogin={() => setAuthView('login')}
+        />
+      );
+    }
+    
+    return (
+      <LoginPage
+        onSuccess={() => setIsLoading(true)}
+        onSwitchToRegister={() => setAuthView('register')}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 animate-in fade-in duration-500">
       {/* Header */}
@@ -40,8 +79,23 @@ export default function Home() {
               <Logo size={32} className="sm:w-10 sm:h-10" />
               <div>
                 <h1 className="text-base sm:text-xl font-bold text-gray-900">Система учёта нарядов</h1>
-                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Управление личным составом</p>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">{organization?.name}</p>
               </div>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-medium text-gray-900">{currentUser?.username}</p>
+                <p className="text-xs text-gray-600">{currentUser?.role}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={logout}
+                className="gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Выход</span>
+              </Button>
             </div>
           </div>
         </div>

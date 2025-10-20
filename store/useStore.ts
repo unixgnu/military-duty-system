@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { Soldier, Duty, DutyAssignment, ReplacementHistory, AppSettings } from '@/types';
 import { generateId } from '@/lib/utils';
 import { autoAssignDuty } from '@/lib/duty-assignment';
+import { useAuthStore } from './useAuthStore';
 
 interface Store {
   // Данные
@@ -62,6 +63,9 @@ export const useStore = create<Store>()(
           updatedAt: new Date(),
         };
         set((state) => ({ soldiers: [...state.soldiers, soldier] }));
+        
+        // Логирование
+        useAuthStore.getState().logAction('create', 'soldier', soldier.id, { name: `${soldier.lastName} ${soldier.firstName}` });
       },
       
       updateSoldier: (id, soldierData) => {
@@ -70,12 +74,21 @@ export const useStore = create<Store>()(
             s.id === id ? { ...s, ...soldierData, updatedAt: new Date() } : s
           ),
         }));
+        
+        // Логирование
+        useAuthStore.getState().logAction('update', 'soldier', id, soldierData);
       },
       
       deleteSoldier: (id) => {
+        const soldier = get().soldiers.find(s => s.id === id);
         set((state) => ({
           soldiers: state.soldiers.filter((s) => s.id !== id),
         }));
+        
+        // Логирование
+        if (soldier) {
+          useAuthStore.getState().logAction('delete', 'soldier', id, { name: `${soldier.lastName} ${soldier.firstName}` });
+        }
       },
       
       // Наряды
