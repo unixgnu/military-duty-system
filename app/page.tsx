@@ -45,7 +45,10 @@ export default function Home() {
   if (!organization) {
     return (
       <RegisterPage
-        onSuccess={() => setIsLoading(true)}
+        onSuccess={() => {
+          setIsLoading(true);
+          setTimeout(() => setIsLoading(false), 500);
+        }}
         onSwitchToLogin={() => setAuthView('login')}
         onSwitchToJoin={() => setAuthView('join')}
       />
@@ -57,7 +60,10 @@ export default function Home() {
     if (authView === 'register') {
       return (
         <RegisterPage
-          onSuccess={() => setIsLoading(true)}
+          onSuccess={() => {
+            setIsLoading(true);
+            setTimeout(() => setIsLoading(false), 500);
+          }}
           onSwitchToLogin={() => setAuthView('login')}
           onSwitchToJoin={() => setAuthView('join')}
         />
@@ -67,7 +73,10 @@ export default function Home() {
     if (authView === 'join') {
       return (
         <JoinOrganizationPage
-          onSuccess={() => setIsLoading(true)}
+          onSuccess={() => {
+            setIsLoading(true);
+            setTimeout(() => setIsLoading(false), 500);
+          }}
           onSwitchToLogin={() => setAuthView('login')}
         />
       );
@@ -75,7 +84,10 @@ export default function Home() {
     
     return (
       <LoginPage
-        onSuccess={() => setIsLoading(true)}
+        onSuccess={() => {
+          setIsLoading(true);
+          setTimeout(() => setIsLoading(false), 500);
+        }}
         onSwitchToRegister={() => setAuthView('register')}
       />
     );
