@@ -5,24 +5,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthStore } from '@/store/useAuthStore';
 import Logo from '@/components/Logo';
-import { Shield, Building2, User, Mail, Lock } from 'lucide-react';
+import { User, Mail, Lock, Building2, UserCircle } from 'lucide-react';
+import { UserRole } from '@/types';
 
-interface RegisterPageProps {
+interface JoinOrganizationPageProps {
   onSuccess: () => void;
   onSwitchToLogin: () => void;
-  onSwitchToJoin: () => void;
 }
 
-export default function RegisterPage({ onSuccess, onSwitchToLogin, onSwitchToJoin }: RegisterPageProps) {
-  const register = useAuthStore((state) => state.register);
+export default function JoinOrganizationPage({ onSuccess, onSwitchToLogin }: JoinOrganizationPageProps) {
+  const joinOrganization = useAuthStore((state) => state.joinOrganization);
+  const organization = useAuthStore((state) => state.organization);
+  
   const [formData, setFormData] = useState({
-    organizationName: '',
     username: '',
     email: '',
     password: '',
     confirmPassword: '',
+    organizationId: '',
+    role: 'Пользователь' as UserRole,
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,7 +36,7 @@ export default function RegisterPage({ onSuccess, onSwitchToLogin, onSwitchToJoi
     setError('');
     
     // Валидация
-    if (!formData.organizationName || !formData.username || !formData.email || !formData.password) {
+    if (!formData.username || !formData.email || !formData.password || !formData.organizationId) {
       setError('Заполните все поля');
       return;
     }
@@ -54,11 +58,12 @@ export default function RegisterPage({ onSuccess, onSwitchToLogin, onSwitchToJoi
     
     setLoading(true);
     
-    const success = await register(
+    const success = await joinOrganization(
       formData.email,
       formData.password,
       formData.username,
-      formData.organizationName
+      formData.organizationId,
+      formData.role
     );
     
     setLoading(false);
@@ -66,7 +71,7 @@ export default function RegisterPage({ onSuccess, onSwitchToLogin, onSwitchToJoi
     if (success) {
       onSuccess();
     } else {
-      setError('Организация уже зарегистрирована');
+      setError('Неверный ID организации или email уже используется');
     }
   };
 
@@ -77,25 +82,32 @@ export default function RegisterPage({ onSuccess, onSwitchToLogin, onSwitchToJoi
           <div className="flex justify-center mb-4">
             <Logo size={64} />
           </div>
-          <CardTitle className="text-2xl">Регистрация организации</CardTitle>
+          <CardTitle className="text-2xl">Присоединиться к организации</CardTitle>
           <CardDescription>
-            Создайте аккаунт администратора для вашей организации
+            Введите ID организации для присоединения
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="organizationName" className="flex items-center gap-2">
+              <Label htmlFor="organizationId" className="flex items-center gap-2">
                 <Building2 className="w-4 h-4" />
-                Название организации *
+                ID организации *
               </Label>
               <Input
-                id="organizationName"
-                placeholder="Например: Воинская часть 12345"
-                value={formData.organizationName}
-                onChange={(e) => setFormData({ ...formData, organizationName: e.target.value })}
+                id="organizationId"
+                placeholder="Получите у администратора"
+                value={formData.organizationId}
+                onChange={(e) => setFormData({ ...formData, organizationId: e.target.value })}
                 required
               />
+              {organization && (
+                <p className="text-xs text-gray-600">
+                  Текущая организация: <strong>{organization.name}</strong>
+                  <br />
+                  ID: <code className="bg-gray-100 px-1 rounded">{organization.id}</code>
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -120,7 +132,7 @@ export default function RegisterPage({ onSuccess, onSwitchToLogin, onSwitchToJoi
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@example.com"
+                placeholder="your@email.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
@@ -157,6 +169,25 @@ export default function RegisterPage({ onSuccess, onSwitchToLogin, onSwitchToJoi
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="role" className="flex items-center gap-2">
+                <UserCircle className="w-4 h-4" />
+                Роль
+              </Label>
+              <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value as UserRole })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Пользователь">Пользователь (только просмотр)</SelectItem>
+                  <SelectItem value="Командир роты">Командир роты (редактирование)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-600">
+                Администратор может изменить вашу роль позже
+              </p>
+            </div>
+
             {error && (
               <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
                 {error}
@@ -164,42 +195,27 @@ export default function RegisterPage({ onSuccess, onSwitchToLogin, onSwitchToJoi
             )}
 
             <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-sm">
-              <div className="flex items-start gap-2">
-                <Shield className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <div>
-                  <strong>Вы станете администратором</strong>
-                  <p className="text-xs mt-1">
-                    Первый зарегистрированный пользователь получает полный доступ ко всем функциям системы.
-                  </p>
-                </div>
-              </div>
+              <p className="text-xs">
+                <strong>Как получить ID организации?</strong>
+                <br />
+                Попросите администратора вашей организации предоставить ID.
+                Он может найти его в разделе "Настройки".
+              </p>
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Создание...' : 'Создать организацию'}
+              {loading ? 'Присоединение...' : 'Присоединиться'}
             </Button>
 
-            <div className="text-center text-sm text-gray-600 space-y-2">
-              <div>
-                Уже есть организация?{' '}
-                <button
-                  type="button"
-                  onClick={onSwitchToJoin}
-                  className="text-blue-600 hover:underline font-medium"
-                >
-                  Присоединиться
-                </button>
-              </div>
-              <div>
-                Уже есть аккаунт?{' '}
-                <button
-                  type="button"
-                  onClick={onSwitchToLogin}
-                  className="text-blue-600 hover:underline font-medium"
-                >
-                  Войти
-                </button>
-              </div>
+            <div className="text-center text-sm text-gray-600">
+              Уже есть аккаунт?{' '}
+              <button
+                type="button"
+                onClick={onSwitchToLogin}
+                className="text-blue-600 hover:underline font-medium"
+              >
+                Войти
+              </button>
             </div>
           </form>
         </CardContent>

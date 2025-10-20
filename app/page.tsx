@@ -15,12 +15,13 @@ import Loading from '@/components/Loading';
 import Logo from '@/components/Logo';
 import RegisterPage from '@/components/auth/RegisterPage';
 import LoginPage from '@/components/auth/LoginPage';
+import JoinOrganizationPage from '@/components/auth/JoinOrganizationPage';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('soldiers');
   const [isLoading, setIsLoading] = useState(true);
-  const [authView, setAuthView] = useState<'login' | 'register'>('login');
+  const [authView, setAuthView] = useState<'login' | 'register' | 'join'>('login');
   
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const organization = useAuthStore((state) => state.organization);
@@ -46,6 +47,7 @@ export default function Home() {
       <RegisterPage
         onSuccess={() => setIsLoading(true)}
         onSwitchToLogin={() => setAuthView('login')}
+        onSwitchToJoin={() => setAuthView('join')}
       />
     );
   }
@@ -55,6 +57,16 @@ export default function Home() {
     if (authView === 'register') {
       return (
         <RegisterPage
+          onSuccess={() => setIsLoading(true)}
+          onSwitchToLogin={() => setAuthView('login')}
+          onSwitchToJoin={() => setAuthView('join')}
+        />
+      );
+    }
+    
+    if (authView === 'join') {
+      return (
+        <JoinOrganizationPage
           onSuccess={() => setIsLoading(true)}
           onSwitchToLogin={() => setAuthView('login')}
         />

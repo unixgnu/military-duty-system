@@ -13,6 +13,7 @@ interface AuthStore {
   
   // Аутентификация
   register: (email: string, password: string, username: string, organizationName: string) => Promise<boolean>;
+  joinOrganization: (email: string, password: string, username: string, organizationId: string, role: UserRole) => Promise<boolean>;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   
@@ -53,11 +54,6 @@ export const useAuthStore = create<AuthStore>()(
       register: async (email, password, username, organizationName) => {
         const state = get();
         
-        // Проверка: если уже есть организация, регистрация закрыта
-        if (state.organization) {
-          return false;
-        }
-        
         // Проверка email
         if (state.users.find(u => u.email === email)) {
           return false;
@@ -95,6 +91,46 @@ export const useAuthStore = create<AuthStore>()(
         });
         
         get().logAction('register', 'user', userId, { username, role: 'Администратор' });
+        
+        return true;
+      },
+      
+      // Присоединение к существующей организации
+      joinOrganization: async (email, password, username, organizationId, role) => {
+        const state = get();
+        
+        // Проверка: организация должна существовать
+        if (!state.organization || state.organization.id !== organizationId) {
+          return false;
+        }
+        
+        // Проверка email
+        if (state.users.find(u => u.email === email)) {
+          return false;
+        }
+        
+        const userId = generateId();
+        
+        // Создаем нового пользователя
+        const user: User = {
+          id: userId,
+          email,
+          password: hashPassword(password),
+          username,
+          role,
+          organizationId,
+          createdAt: new Date(),
+          lastLogin: new Date(),
+          isActive: true,
+        };
+        
+        set({
+          users: [...state.users, user],
+          currentUser: user,
+          isAuthenticated: true,
+        });
+        
+        get().logAction('join', 'user', userId, { username, role });
         
         return true;
       },

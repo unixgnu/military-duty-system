@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useStore } from '@/store/useStore';
-import { Plus, X, Trash2, Download, Upload, AlertTriangle, Database } from 'lucide-react';
+import { useAuthStore } from '@/store/useAuthStore';
+import { Plus, X, Trash2, Download, Upload, AlertTriangle, Database, Copy, Users as UsersIcon } from 'lucide-react';
 import { generateDemoSoldiers, generateDemoDuties } from '@/lib/demo-data';
 
 export default function SettingsPage() {
@@ -19,6 +20,11 @@ export default function SettingsPage() {
   const addSoldier = useStore((state) => state.addSoldier);
   const addDuty = useStore((state) => state.addDuty);
   const autoAssignDutyById = useStore((state) => state.autoAssignDutyById);
+  
+  const organization = useAuthStore((state) => state.organization);
+  const currentUser = useAuthStore((state) => state.currentUser);
+  const users = useAuthStore((state) => state.users);
+  const isAdmin = useAuthStore((state) => state.isAdmin);
 
   const [newDutyType, setNewDutyType] = useState('');
   const [newDutyRole, setNewDutyRole] = useState('');
@@ -119,8 +125,63 @@ export default function SettingsPage() {
     alert('Демо-данные загружены!');
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert('Скопировано в буфер обмена!');
+  };
+
   return (
     <div className="space-y-6">
+      {/* Информация об организации */}
+      {organization && (
+        <Card className="glass">
+          <CardHeader>
+            <CardTitle>Информация об организации</CardTitle>
+            <CardDescription>Данные вашей организации</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Название</Label>
+                <p className="text-base">{organization.name}</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Пользователей</Label>
+                <p className="text-base flex items-center gap-2">
+                  <UsersIcon className="w-4 h-4" />
+                  {users.length}
+                </p>
+              </div>
+            </div>
+            
+            {isAdmin() && (
+              <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                <Label className="text-sm font-medium text-blue-900 mb-2 block">
+                  ID организации (для присоединения новых пользователей)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 px-3 py-2 bg-white rounded border text-sm font-mono">
+                    {organization.id}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(organization.id)}
+                    className="gap-2"
+                  >
+                    <Copy className="w-4 h-4" />
+                    Копировать
+                  </Button>
+                </div>
+                <p className="text-xs text-blue-700 mt-2">
+                  Отправьте этот ID новым пользователям для присоединения к организации
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Типы нарядов */}
       <Card className="glass">
         <CardHeader>
